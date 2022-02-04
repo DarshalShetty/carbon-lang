@@ -13,6 +13,6 @@ package ExecutableSemanticsTest api;
 
 fn Main() -> i32 {
   var x: i32 = 5;
-  var p: i32* = &5;
+  var p: i32* = &x;
   return 0;
 }
