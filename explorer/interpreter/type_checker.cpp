@@ -2695,6 +2695,12 @@ auto TypeChecker::TypeCheckDeclaration(Nonnull<Declaration*> d,
       CARBON_RETURN_IF_ERROR(
           TypeCheckClassDeclaration(&cast<ClassDeclaration>(*d), impl_scope));
       return Success();
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
     case DeclarationKind::ChoiceDeclaration:
       CARBON_RETURN_IF_ERROR(
           TypeCheckChoiceDeclaration(&cast<ChoiceDeclaration>(*d), impl_scope));
@@ -2755,6 +2761,13 @@ auto TypeChecker::DeclareDeclaration(Nonnull<Declaration*> d,
       auto& class_decl = cast<ClassDeclaration>(*d);
       CARBON_RETURN_IF_ERROR(DeclareClassDeclaration(&class_decl, scope_info));
       break;
+    }
+
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
     }
 
     case DeclarationKind::ChoiceDeclaration: {

@@ -61,6 +61,7 @@ EXTERNAL             "external"
 FALSE                "false"
 FN                   "fn"
 FN_TYPE              "__Fn"
+FOR                  "for"
 FORALL               "forall"
 IF                   "if"
 IMPL                 "impl"
@@ -73,6 +74,8 @@ LET                  "let"
 LIBRARY              "library"
 MATCH                "match"
 MINUS                "-"
+MIX                  "mix"
+MIXIN                "mixin"
 NOT                  "not"
 OR                   "or"
 PACKAGE              "package"
@@ -167,6 +170,7 @@ string_literal        \"([^\\\"\n\v\f\r]|\\.)*\"
 {FN_TYPE}             { return SIMPLE_TOKEN(FN_TYPE);             }
 {FN}                  { return SIMPLE_TOKEN(FN);                  }
 {FORALL}              { return SIMPLE_TOKEN(FORALL);              }
+{FOR}                 { return SIMPLE_TOKEN(FOR);                 }
 {IF}                  { return SIMPLE_TOKEN(IF);                  }
 {IMPL}                { return SIMPLE_TOKEN(IMPL);                }
 {IMPORT}              { return SIMPLE_TOKEN(IMPORT);              }
@@ -178,6 +182,8 @@ string_literal        \"([^\\\"\n\v\f\r]|\\.)*\"
 {LIBRARY}             { return SIMPLE_TOKEN(LIBRARY);             }
 {MATCH}               { return SIMPLE_TOKEN(MATCH);               }
 {MINUS}               { return SIMPLE_TOKEN(MINUS);               }
+{MIXIN}               { return SIMPLE_TOKEN(MIXIN);               }
+{MIX}                 { return SIMPLE_TOKEN(MIX);                 }
 {NOT}                 { return SIMPLE_TOKEN(NOT);                 }
 {OR}                  { return SIMPLE_TOKEN(OR);                  }
 {PACKAGE}             { return SIMPLE_TOKEN(PACKAGE);             }

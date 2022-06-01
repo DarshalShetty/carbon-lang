@@ -52,6 +52,12 @@ void Declaration::Print(llvm::raw_ostream& out) const {
       out << "}\n";
       break;
     }
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
 
     case DeclarationKind::ChoiceDeclaration: {
       const auto& choice = cast<ChoiceDeclaration>(*this);
@@ -117,6 +123,12 @@ void Declaration::PrintID(llvm::raw_ostream& out) const {
       out << "class " << class_decl.name();
       break;
     }
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
 
     case DeclarationKind::ChoiceDeclaration: {
       const auto& choice = cast<ChoiceDeclaration>(*this);
@@ -149,6 +161,12 @@ auto GetName(const Declaration& declaration) -> std::optional<std::string> {
       return cast<FunctionDeclaration>(declaration).name();
     case DeclarationKind::ClassDeclaration:
       return cast<ClassDeclaration>(declaration).name();
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
     case DeclarationKind::ChoiceDeclaration:
       return cast<ChoiceDeclaration>(declaration).name();
     case DeclarationKind::InterfaceDeclaration:

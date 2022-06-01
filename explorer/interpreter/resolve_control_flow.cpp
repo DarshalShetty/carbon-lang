@@ -4,6 +4,8 @@
 
 #include "explorer/interpreter/resolve_control_flow.h"
 
+#include <stdexcept>
+
 #include "explorer/ast/declaration.h"
 #include "explorer/ast/return_term.h"
 #include "explorer/ast/statement.h"
@@ -136,6 +138,12 @@ auto ResolveControlFlow(Nonnull<Declaration*> declaration) -> ErrorOr<Success> {
         CARBON_RETURN_IF_ERROR(ResolveControlFlow(member));
       }
       break;
+    }
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
     }
     case DeclarationKind::InterfaceDeclaration: {
       auto& iface_decl = cast<InterfaceDeclaration>(*declaration);

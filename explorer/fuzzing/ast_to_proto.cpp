@@ -507,6 +507,13 @@ static auto DeclarationToProto(const Declaration& declaration)
       break;
     }
 
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+
     case DeclarationKind::ChoiceDeclaration: {
       const auto& choice = cast<ChoiceDeclaration>(declaration);
       auto* choice_proto = declaration_proto.mutable_choice();

@@ -11,6 +11,7 @@
 
 #include "common/ostream.h"
 #include "explorer/ast/ast_node.h"
+#include "explorer/ast/expression.h"
 #include "explorer/ast/impl_binding.h"
 #include "explorer/ast/pattern.h"
 #include "explorer/ast/return_term.h"
@@ -215,6 +216,68 @@ class ClassDeclaration : public Declaration {
   Nonnull<SelfDeclaration*> self_decl_;
   std::optional<Nonnull<TuplePattern*>> type_params_;
   std::vector<Nonnull<Declaration*>> members_;
+};
+
+class MixinDeclaration : public Declaration {
+ public:
+  using ImplementsCarbonValueNode = void;
+
+  MixinDeclaration(SourceLocation source_loc, std::string name,
+                   Nonnull<SelfDeclaration*> self_decl,
+                   std::optional<Nonnull<TuplePattern*>> type_params,
+                   std::optional<Nonnull<Expression*>> mixin_import,
+                   std::vector<Nonnull<Declaration*>> members)
+      : Declaration(AstNodeKind::MixinDeclaration, source_loc),
+        name_(std::move(name)),
+        self_decl_(self_decl),
+        type_params_(type_params),
+        mixin_import_(mixin_import),
+        members_(std::move(members)) {}
+
+  static auto classof(const AstNode* node) -> bool {
+    return InheritsFromMixinDeclaration(node->kind());
+  }
+
+  auto name() const -> const std::string& { return name_; }
+  auto type_params() const -> std::optional<Nonnull<const TuplePattern*>> {
+    return type_params_;
+  }
+  auto type_params() -> std::optional<Nonnull<TuplePattern*>> {
+    return type_params_;
+  }
+  auto self() const -> Nonnull<const SelfDeclaration*> { return self_decl_; }
+  auto self() -> Nonnull<SelfDeclaration*> { return self_decl_; }
+
+  auto members() const -> llvm::ArrayRef<Nonnull<Declaration*>> {
+    return members_;
+  }
+
+  auto value_category() const -> ValueCategory { return ValueCategory::Let; }
+
+ private:
+  std::string name_;
+  Nonnull<SelfDeclaration*> self_decl_;
+  std::optional<Nonnull<TuplePattern*>> type_params_;
+  std::optional<Nonnull<Expression*>> mixin_import_;
+  std::vector<Nonnull<Declaration*>> members_;
+};
+
+class MixDeclaration : public Declaration {
+ public:
+  MixDeclaration(SourceLocation source_loc,
+                 std::optional<Nonnull<Expression*>> mixin_type)
+      : Declaration(AstNodeKind::MixDeclaration, source_loc),
+        mixin_type_(mixin_type) {}
+
+  static auto classof(const AstNode* node) -> bool {
+    return InheritsFromMixDeclaration(node->kind());
+  }
+
+  auto mixin_type() const -> const Expression& { return **mixin_type_; }
+  auto mixin_type() -> Expression& { return **mixin_type_; }
+
+ private:
+  std::optional<Nonnull<Expression*>> mixin_type_;
 };
 
 class AlternativeSignature : public AstNode {

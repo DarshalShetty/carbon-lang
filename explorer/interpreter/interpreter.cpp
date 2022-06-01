@@ -1401,6 +1401,8 @@ auto Interpreter::StepDeclaration() -> ErrorOr<Success> {
     }
     case DeclarationKind::FunctionDeclaration:
     case DeclarationKind::ClassDeclaration:
+    case DeclarationKind::MixinDeclaration:
+    case DeclarationKind::MixDeclaration:
     case DeclarationKind::ChoiceDeclaration:
     case DeclarationKind::InterfaceDeclaration:
     case DeclarationKind::ImplDeclaration:

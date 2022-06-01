@@ -95,6 +95,7 @@ cc_library(
     ],
     deps = [
         ":ast_node",
+        ":expression",
         ":impl_binding",
         ":pattern",
         ":return_term",

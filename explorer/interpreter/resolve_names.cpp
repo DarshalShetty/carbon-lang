@@ -46,6 +46,12 @@ static auto AddExposedNames(const Declaration& declaration,
           enclosing_scope.Add(class_decl.name(), &class_decl));
       break;
     }
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
     case DeclarationKind::ChoiceDeclaration: {
       // Choice name is added to the scope after the choice's alternatives.
       // See https://github.com/carbon-language/carbon-lang/issues/1248.
@@ -420,6 +426,12 @@ static auto ResolveNames(Declaration& declaration, StaticScope& enclosing_scope)
         CARBON_RETURN_IF_ERROR(ResolveNames(*member, class_scope));
       }
       break;
+    }
+    case DeclarationKind::MixinDeclaration: {
+      throw std::runtime_error("Not implemented");
+    }
+    case DeclarationKind::MixDeclaration: {
+      throw std::runtime_error("Not implemented");
     }
     case DeclarationKind::ChoiceDeclaration: {
       auto& choice = cast<ChoiceDeclaration>(declaration);

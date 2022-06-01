@@ -141,6 +141,7 @@
 %type <Nonnull<Expression*>> statement_expression
 %type <Nonnull<Expression*>> if_expression
 %type <Nonnull<Expression*>> expression
+%type <std::optional<Nonnull<Expression*>>> mixin_import
 %type <Nonnull<GenericBinding*>> generic_binding
 %type <std::vector<Nonnull<AstNode*>>> deduced_params
 %type <std::vector<Nonnull<AstNode*>>> impl_deduced_params
@@ -202,6 +203,7 @@
   FALSE
   FN
   FN_TYPE
+  FOR
   FORALL
   IF
   IMPL
@@ -214,6 +216,8 @@
   LIBRARY
   MATCH
   MINUS
+  MIX
+  MIXIN
   NOT
   OR
   PACKAGE
@@ -905,6 +909,12 @@ type_params:
 | tuple_pattern
     { $$ = $1; }
 ;
+mixin_import:
+  // Empty
+    { $$ = std::nullopt; }
+| FOR expression
+    { $$ = $2; }
+;
 declaration:
   function_declaration
     { $$ = $1; }
@@ -914,6 +924,14 @@ declaration:
           context.source_loc(), $2,
           arena->New<SelfDeclaration>(context.source_loc()), $3, $5);
     }
+| MIXIN identifier type_params mixin_import LEFT_CURLY_BRACE declaration_list RIGHT_CURLY_BRACE
+    {
+      $$ = arena->New<MixinDeclaration>(
+          context.source_loc(), $2,
+          arena->New<SelfDeclaration>(context.source_loc()), $3, $4, $6);
+    }
+| MIX expression SEMICOLON
+    { $$ = arena->New<MixDeclaration>(context.source_loc(), $2); }
 | CHOICE identifier LEFT_CURLY_BRACE alternative_list RIGHT_CURLY_BRACE
     { $$ = arena->New<ChoiceDeclaration>(context.source_loc(), $2, $4); }
 | VAR variable_declaration SEMICOLON
