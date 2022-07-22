@@ -4,6 +4,8 @@
 
 #include "explorer/ast/declaration.h"
 
+#include <optional>
+
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/Casting.h"
 
@@ -53,10 +55,20 @@ void Declaration::Print(llvm::raw_ostream& out) const {
       break;
     }
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      const auto& mixin_decl = cast<MixinDeclaration>(*this);
+      PrintID(out);
+      out << "{\n";
+      for (Nonnull<Declaration*> m : mixin_decl.members()) {
+        out << *m;
+      }
+      out << "}\n";
+      break;
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      const auto& mix_decl = cast<MixDeclaration>(*this);
+      PrintID(out);
+      out << mix_decl.mixin_type() << ";";
+      break;
     }
 
     case DeclarationKind::ChoiceDeclaration: {
@@ -124,10 +136,16 @@ void Declaration::PrintID(llvm::raw_ostream& out) const {
       break;
     }
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      const auto& mixin_decl = cast<MixinDeclaration>(*this);
+      out << "mixin " << mixin_decl.name();
+      if (mixin_decl.self()->type().kind() != ExpressionKind::TypeTypeLiteral) {
+        out << " for " << mixin_decl.self()->type();
+      }
+      break;
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      out << "mix ";
+      break;
     }
 
     case DeclarationKind::ChoiceDeclaration: {
@@ -162,10 +180,10 @@ auto GetName(const Declaration& declaration) -> std::optional<std::string> {
     case DeclarationKind::ClassDeclaration:
       return cast<ClassDeclaration>(declaration).name();
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      return cast<MixinDeclaration>(declaration).name();
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      return std::nullopt;
     }
     case DeclarationKind::ChoiceDeclaration:
       return cast<ChoiceDeclaration>(declaration).name();

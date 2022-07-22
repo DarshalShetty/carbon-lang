@@ -508,10 +508,10 @@ static auto DeclarationToProto(const Declaration& declaration)
     }
 
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      throw std::runtime_error("Not implemented (ast_to_proto)");
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      throw std::runtime_error("Not implemented (ast_to_proto)");
     }
 
     case DeclarationKind::ChoiceDeclaration: {

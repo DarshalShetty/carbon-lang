@@ -12,18 +12,14 @@
 package ExplorerTest api;
 
 mixin Operations {
-  var factor: i32;
-  fn Square[me: Self](x:i32) -> i32 {
+  fn Square[me: Self](x:i32) -> i32{
     return x * x;
-  }
-  fn Scale[me: Self](x: i32) -> i32 {
-    return x * me.factor;
   }
 }
 
 class Point {
   fn Origin() -> Point {
-    return {.x = 0, .y = 0, .factor = 2};
+    return {.x = 0, .y = 0};
   }
 
   var x: i32;
@@ -33,7 +29,7 @@ class Point {
 
 class Complex {
   fn Zero() -> Complex {
-    return {.r = 0, .i = 0, .factor = 3};
+    return {.r = 0, .i = 0};
   }
 
   var r: i32;
@@ -44,8 +40,8 @@ class Complex {
 
 fn Main() -> i32 {
   var p: Point = Point.Origin();
-  var c: Complex = Point.Zero();
+  var c: Complex = Complex.Zero();
   p.x = 3;
-  c.r = 2;
-  return p.Square(p.y) + c.Square(c.i) + p.Scale(p.x) - c.Scale(c.r);
+  c.r = 3;
+  return p.Square(p.y) - c.Square(c.i);
 }

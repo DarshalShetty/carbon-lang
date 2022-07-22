@@ -496,6 +496,7 @@ auto Interpreter::Convert(Nonnull<const Value*> value,
     case Value::Kind::PointerType:
     case Value::Kind::AutoType:
     case Value::Kind::NominalClassType:
+    case Value::Kind::MixinPseudoType:
     case Value::Kind::InterfaceType:
     case Value::Kind::Witness:
     case Value::Kind::ParameterizedEntityName:
@@ -508,6 +509,7 @@ auto Interpreter::Convert(Nonnull<const Value*> value,
     case Value::Kind::StringType:
     case Value::Kind::StringValue:
     case Value::Kind::TypeOfClassType:
+    case Value::Kind::TypeOfMixinPseudoType:
     case Value::Kind::TypeOfInterfaceType:
     case Value::Kind::TypeOfChoiceType:
     case Value::Kind::TypeOfParameterizedEntityName:

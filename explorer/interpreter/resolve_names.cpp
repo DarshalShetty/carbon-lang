@@ -47,10 +47,14 @@ static auto AddExposedNames(const Declaration& declaration,
       break;
     }
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      auto& mixin_decl = cast<MixinDeclaration>(declaration);
+      CARBON_RETURN_IF_ERROR(
+          enclosing_scope.Add(mixin_decl.name(), &mixin_decl));
+      break;
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      // Nothing to do here
+      break;
     }
     case DeclarationKind::ChoiceDeclaration: {
       // Choice name is added to the scope after the choice's alternatives.
@@ -428,10 +432,27 @@ static auto ResolveNames(Declaration& declaration, StaticScope& enclosing_scope)
       break;
     }
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      auto& mixin_decl = cast<MixinDeclaration>(declaration);
+      StaticScope mixin_scope;
+      mixin_scope.AddParent(&enclosing_scope);
+      if (mixin_decl.params().has_value()) {
+        CARBON_RETURN_IF_ERROR(
+            ResolveNames(**mixin_decl.params(), mixin_scope));
+      }
+      CARBON_RETURN_IF_ERROR(mixin_scope.Add("Self", mixin_decl.self()));
+      for (Nonnull<Declaration*> member : mixin_decl.members()) {
+        CARBON_RETURN_IF_ERROR(AddExposedNames(*member, mixin_scope));
+      }
+      for (Nonnull<Declaration*> member : mixin_decl.members()) {
+        CARBON_RETURN_IF_ERROR(ResolveNames(*member, mixin_scope));
+      }
+      break;
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      auto& mix_decl = cast<MixDeclaration>(declaration);
+      CARBON_RETURN_IF_ERROR(
+          ResolveNames(mix_decl.mixin_type(), enclosing_scope));
+      break;
     }
     case DeclarationKind::ChoiceDeclaration: {
       auto& choice = cast<ChoiceDeclaration>(declaration);

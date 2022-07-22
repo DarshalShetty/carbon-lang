@@ -223,15 +223,13 @@ class MixinDeclaration : public Declaration {
   using ImplementsCarbonValueNode = void;
 
   MixinDeclaration(SourceLocation source_loc, std::string name,
-                   Nonnull<SelfDeclaration*> self_decl,
-                   std::optional<Nonnull<TuplePattern*>> type_params,
-                   std::optional<Nonnull<Expression*>> mixin_import,
+                   std::optional<Nonnull<TuplePattern*>> params,
+                   Nonnull<GenericBinding*> self,
                    std::vector<Nonnull<Declaration*>> members)
       : Declaration(AstNodeKind::MixinDeclaration, source_loc),
         name_(std::move(name)),
-        self_decl_(self_decl),
-        type_params_(type_params),
-        mixin_import_(mixin_import),
+        params_(std::move(params)),
+        self_(self),
         members_(std::move(members)) {}
 
   static auto classof(const AstNode* node) -> bool {
@@ -239,15 +237,12 @@ class MixinDeclaration : public Declaration {
   }
 
   auto name() const -> const std::string& { return name_; }
-  auto type_params() const -> std::optional<Nonnull<const TuplePattern*>> {
-    return type_params_;
+  auto params() const -> std::optional<Nonnull<const TuplePattern*>> {
+    return params_;
   }
-  auto type_params() -> std::optional<Nonnull<TuplePattern*>> {
-    return type_params_;
-  }
-  auto self() const -> Nonnull<const SelfDeclaration*> { return self_decl_; }
-  auto self() -> Nonnull<SelfDeclaration*> { return self_decl_; }
-
+  auto params() -> std::optional<Nonnull<TuplePattern*>> { return params_; }
+  auto self() const -> Nonnull<const GenericBinding*> { return self_; }
+  auto self() -> Nonnull<GenericBinding*> { return self_; }
   auto members() const -> llvm::ArrayRef<Nonnull<Declaration*>> {
     return members_;
   }
@@ -256,9 +251,8 @@ class MixinDeclaration : public Declaration {
 
  private:
   std::string name_;
-  Nonnull<SelfDeclaration*> self_decl_;
-  std::optional<Nonnull<TuplePattern*>> type_params_;
-  std::optional<Nonnull<Expression*>> mixin_import_;
+  std::optional<Nonnull<TuplePattern*>> params_;
+  Nonnull<GenericBinding*> self_;
   std::vector<Nonnull<Declaration*>> members_;
 };
 

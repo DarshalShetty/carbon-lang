@@ -152,6 +152,9 @@ class TypeChecker {
   auto DeclareClassDeclaration(Nonnull<ClassDeclaration*> class_decl,
                                const ScopeInfo& scope_info) -> ErrorOr<Success>;
 
+  auto DeclareMixinDeclaration(Nonnull<MixinDeclaration*> mixin_decl,
+                               const ScopeInfo& scope_info) -> ErrorOr<Success>;
+
   auto DeclareInterfaceDeclaration(Nonnull<InterfaceDeclaration*> iface_decl,
                                    const ScopeInfo& scope_info)
       -> ErrorOr<Success>;
@@ -209,6 +212,14 @@ class TypeChecker {
   auto TypeCheckClassDeclaration(Nonnull<ClassDeclaration*> class_decl,
                                  const ImplScope& impl_scope)
       -> ErrorOr<Success>;
+
+  // Type check all the members of the mixin.
+  auto TypeCheckMixinDeclaration(Nonnull<MixinDeclaration*> mixin_decl,
+                                 const ImplScope& impl_scope)
+      -> ErrorOr<Success>;
+
+  auto TypeCheckMixDeclaration(Nonnull<MixDeclaration*> mix_decl,
+                               const ImplScope& impl_scope) -> ErrorOr<Success>;
 
   // Type check all the members of the interface.
   auto TypeCheckInterfaceDeclaration(Nonnull<InterfaceDeclaration*> iface_decl,

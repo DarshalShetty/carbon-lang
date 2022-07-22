@@ -5,8 +5,10 @@
 #include "explorer/interpreter/value.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "common/check.h"
+#include "explorer/ast/declaration.h"
 #include "explorer/common/arena.h"
 #include "explorer/common/error_builders.h"
 #include "explorer/interpreter/action.h"
@@ -338,6 +340,34 @@ void Value::Print(llvm::raw_ostream& out) const {
       }
       break;
     }
+    case Value::Kind::MixinPseudoType: {
+      const auto& mixin_type = cast<MixinPseudoType>(*this);
+      out << "mixin " << mixin_type.declaration().name();
+      if (!mixin_type.type_args().empty()) {
+        out << "(";
+        llvm::ListSeparator sep;
+        for (const auto& [bind, val] : mixin_type.type_args()) {
+          out << sep << bind->name() << " = " << *val;
+        }
+        out << ")";
+      }
+      if (!mixin_type.impls().empty()) {
+        out << " impls ";
+        llvm::ListSeparator sep;
+        for (const auto& [impl_bind, impl] : mixin_type.impls()) {
+          out << sep << *impl;
+        }
+      }
+      if (!mixin_type.witnesses().empty()) {
+        out << " witnesses ";
+        llvm::ListSeparator sep;
+        for (const auto& [impl_bind, witness] : mixin_type.witnesses()) {
+          out << sep << *witness;
+        }
+      }
+      // TODO: print the import interface
+      break;
+    }
     case Value::Kind::InterfaceType: {
       const auto& iface_type = cast<InterfaceType>(*this);
       out << "interface " << iface_type.declaration().name();
@@ -399,6 +429,14 @@ void Value::Print(llvm::raw_ostream& out) const {
       break;
     case Value::Kind::TypeOfClassType:
       out << "typeof(" << cast<TypeOfClassType>(*this).class_type() << ")";
+      break;
+    case Value::Kind::TypeOfMixinPseudoType:
+      out << "typeof("
+          << cast<TypeOfMixinPseudoType>(*this)
+                 .mixin_type()
+                 .declaration()
+                 .name()
+          << ")";
       break;
     case Value::Kind::TypeOfInterfaceType:
       out << "typeof("
@@ -574,6 +612,8 @@ auto TypeEqual(Nonnull<const Value*> t1, Nonnull<const Value*> t2) -> bool {
     case Value::Kind::MemberName:
     case Value::Kind::TypeOfParameterizedEntityName:
     case Value::Kind::TypeOfMemberName:
+    case Value::Kind::MixinPseudoType:
+    case Value::Kind::TypeOfMixinPseudoType:
       CARBON_FATAL() << "TypeEqual used to compare non-type values\n"
                      << *t1 << "\n"
                      << *t2;
@@ -663,6 +703,7 @@ auto ValueEqual(Nonnull<const Value*> v1, Nonnull<const Value*> v2) -> bool {
     case Value::Kind::AutoType:
     case Value::Kind::StructType:
     case Value::Kind::NominalClassType:
+    case Value::Kind::MixinPseudoType:
     case Value::Kind::InterfaceType:
     case Value::Kind::Witness:
     case Value::Kind::ChoiceType:
@@ -670,6 +711,7 @@ auto ValueEqual(Nonnull<const Value*> v1, Nonnull<const Value*> v2) -> bool {
     case Value::Kind::VariableType:
     case Value::Kind::StringType:
     case Value::Kind::TypeOfClassType:
+    case Value::Kind::TypeOfMixinPseudoType:
     case Value::Kind::TypeOfInterfaceType:
     case Value::Kind::TypeOfChoiceType:
     case Value::Kind::TypeOfParameterizedEntityName:
@@ -723,6 +765,9 @@ auto FindMember(const std::string& name,
                 llvm::ArrayRef<Nonnull<Declaration*>> members)
     -> std::optional<Nonnull<const Declaration*>> {
   for (Nonnull<const Declaration*> member : members) {
+    if (llvm::isa<MixDeclaration>(member)) {
+      throw std::runtime_error("Continue here!");
+    }
     if (std::optional<std::string> mem_name = GetName(*member);
         mem_name.has_value()) {
       if (*mem_name == name) {

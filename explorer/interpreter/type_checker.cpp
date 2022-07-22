@@ -10,6 +10,7 @@
 #include <set>
 #include <vector>
 
+#include "common/check.h"
 #include "common/error.h"
 #include "common/ostream.h"
 #include "explorer/ast/declaration.h"
@@ -93,6 +94,7 @@ static auto IsTypeOfType(Nonnull<const Value*> value) -> bool {
     case Value::Kind::PointerType:
     case Value::Kind::StructType:
     case Value::Kind::NominalClassType:
+    case Value::Kind::MixinPseudoType:
     case Value::Kind::ChoiceType:
     case Value::Kind::ContinuationType:
     case Value::Kind::StringType:
@@ -107,6 +109,7 @@ static auto IsTypeOfType(Nonnull<const Value*> value) -> bool {
     case Value::Kind::TypeType:
     case Value::Kind::InterfaceType:
     case Value::Kind::TypeOfClassType:
+    case Value::Kind::TypeOfMixinPseudoType:
     case Value::Kind::TypeOfInterfaceType:
     case Value::Kind::TypeOfChoiceType:
       // A value of one of these types is itself always a type.
@@ -169,6 +172,11 @@ static auto IsType(Nonnull<const Value*> value, bool concrete = false) -> bool {
       }
       return true;
     }
+    case Value::Kind::MixinPseudoType:
+    case Value::Kind::TypeOfMixinPseudoType:
+      // Mixin type is a second-class type that cannot be used
+      // within a type annotation expression.
+      return false;
   }
 }
 
@@ -716,6 +724,9 @@ auto TypeChecker::ArgumentDeduction(
       }
       return Success();
     }
+    case Value::Kind::MixinPseudoType:
+    case Value::Kind::TypeOfMixinPseudoType:
+      CARBON_CHECK(false) << "Type expression must not contain Mixin types";
   }
 }
 
@@ -795,7 +806,9 @@ auto TypeChecker::Substitute(
     case Value::Kind::ChoiceType:
     case Value::Kind::ContinuationType:
     case Value::Kind::StringType:
+    case Value::Kind::MixinPseudoType:
     case Value::Kind::TypeOfClassType:
+    case Value::Kind::TypeOfMixinPseudoType:
     case Value::Kind::TypeOfInterfaceType:
     case Value::Kind::TypeOfChoiceType:
     case Value::Kind::TypeOfParameterizedEntityName:
@@ -2384,6 +2397,83 @@ auto TypeChecker::TypeCheckClassDeclaration(
   return Success();
 }
 
+auto TypeChecker::DeclareMixinDeclaration(Nonnull<MixinDeclaration*> mixin_decl,
+                                          const ScopeInfo& scope_info)
+    -> ErrorOr<Success> {
+  if (trace_stream_) {
+    **trace_stream_ << "** declaring mixin " << mixin_decl->name() << "\n";
+  }
+  ImplScope mixin_scope;
+  mixin_scope.AddParent(scope_info.innermost_scope);
+
+  if (mixin_decl->params().has_value()) {
+    CARBON_RETURN_IF_ERROR(TypeCheckPattern(*mixin_decl->params(), std::nullopt,
+                                            mixin_scope, ValueCategory::Let));
+    if (trace_stream_) {
+      **trace_stream_ << mixin_scope;
+    }
+
+    Nonnull<ParameterizedEntityName*> param_name =
+        arena_->New<ParameterizedEntityName>(mixin_decl, *mixin_decl->params());
+    SetConstantValue(mixin_decl, param_name);
+    mixin_decl->set_static_type(
+        arena_->New<TypeOfParameterizedEntityName>(param_name));
+  } else {
+    Nonnull<MixinPseudoType*> mixin_type =
+        arena_->New<MixinPseudoType>(mixin_decl);
+    SetConstantValue(mixin_decl, mixin_type);
+    mixin_decl->set_static_type(arena_->New<TypeOfMixinPseudoType>(mixin_type));
+  }
+
+  // Process the Self parameter.
+  CARBON_RETURN_IF_ERROR(TypeCheckPattern(mixin_decl->self(), std::nullopt,
+                                          mixin_scope, ValueCategory::Let));
+
+  ScopeInfo mixin_scope_info = ScopeInfo::ForNonClassScope(&mixin_scope);
+  for (Nonnull<Declaration*> m : mixin_decl->members()) {
+    CARBON_RETURN_IF_ERROR(DeclareDeclaration(m, mixin_scope_info));
+  }
+
+  if (trace_stream_) {
+    **trace_stream_ << "** finished declaring mixin " << mixin_decl->name()
+                    << "\n";
+  }
+  return Success();
+}
+
+auto TypeChecker::TypeCheckMixinDeclaration(
+    Nonnull<MixinDeclaration*> mixin_decl, const ImplScope& impl_scope)
+    -> ErrorOr<Success> {
+  if (trace_stream_) {
+    **trace_stream_ << "** checking mixin " << mixin_decl->name() << "\n";
+  }
+  ImplScope mixin_scope;
+  mixin_scope.AddParent(&impl_scope);
+  if (mixin_decl->params().has_value()) {
+    BringPatternImplsIntoScope(*mixin_decl->params(), mixin_scope);
+  }
+  if (trace_stream_) {
+    **trace_stream_ << mixin_scope;
+  }
+  for (Nonnull<Declaration*> m : mixin_decl->members()) {
+    CARBON_RETURN_IF_ERROR(TypeCheckDeclaration(m, mixin_scope));
+  }
+  if (trace_stream_) {
+    **trace_stream_ << "** finished checking mixin " << mixin_decl->name()
+                    << "\n";
+  }
+  return Success();
+}
+
+auto TypeChecker::TypeCheckMixDeclaration(Nonnull<MixDeclaration*> mix_decl,
+                                          const ImplScope& impl_scope)
+    -> ErrorOr<Success> {
+  // TODO: Not Implemented (TypeCheckMixDeclaration)
+  //  Later make sure the exports of the Mixin declaration and the exports of
+  //  the enclosing Class/Mixin declaration's Self don't clash.
+  return Success();
+}
+
 auto TypeChecker::DeclareInterfaceDeclaration(
     Nonnull<InterfaceDeclaration*> iface_decl, const ScopeInfo& scope_info)
     -> ErrorOr<Success> {
@@ -2620,6 +2710,8 @@ static bool IsValidTypeForAliasTarget(Nonnull<const Value*> type) {
     case Value::Kind::StaticArrayType:
     case Value::Kind::StructType:
     case Value::Kind::NominalClassType:
+    case Value::Kind::MixinPseudoType:
+    case Value::Kind::TypeOfMixinPseudoType:
     case Value::Kind::ChoiceType:
     case Value::Kind::ContinuationType:
     case Value::Kind::StringType:
@@ -2696,10 +2788,14 @@ auto TypeChecker::TypeCheckDeclaration(Nonnull<Declaration*> d,
           TypeCheckClassDeclaration(&cast<ClassDeclaration>(*d), impl_scope));
       return Success();
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      CARBON_RETURN_IF_ERROR(
+          TypeCheckMixinDeclaration(&cast<MixinDeclaration>(*d), impl_scope));
+      return Success();
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      CARBON_RETURN_IF_ERROR(
+          TypeCheckMixDeclaration(&cast<MixDeclaration>(*d), impl_scope));
+      return Success();
     }
     case DeclarationKind::ChoiceDeclaration:
       CARBON_RETURN_IF_ERROR(
@@ -2764,10 +2860,13 @@ auto TypeChecker::DeclareDeclaration(Nonnull<Declaration*> d,
     }
 
     case DeclarationKind::MixinDeclaration: {
-      throw std::runtime_error("Not implemented");
+      auto& mixin_decl = cast<MixinDeclaration>(*d);
+      CARBON_RETURN_IF_ERROR(DeclareMixinDeclaration(&mixin_decl, scope_info));
+      break;
     }
     case DeclarationKind::MixDeclaration: {
-      throw std::runtime_error("Not implemented");
+      // Nothing to do here
+      break;
     }
 
     case DeclarationKind::ChoiceDeclaration: {
