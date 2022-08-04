@@ -25,6 +25,8 @@
 
 namespace Carbon {
 
+class MixinPseudoType;
+
 // Abstract base class of all AST nodes representing patterns.
 //
 // Declaration and its derived classes support LLVM-style RTTI, including
@@ -261,17 +263,23 @@ class MixDeclaration : public Declaration {
   MixDeclaration(SourceLocation source_loc,
                  std::optional<Nonnull<Expression*>> mixin_type)
       : Declaration(AstNodeKind::MixDeclaration, source_loc),
-        mixin_type_(mixin_type) {}
+        mixin_(mixin_type) {}
 
   static auto classof(const AstNode* node) -> bool {
     return InheritsFromMixDeclaration(node->kind());
   }
 
-  auto mixin_type() const -> const Expression& { return **mixin_type_; }
-  auto mixin_type() -> Expression& { return **mixin_type_; }
+  auto mixin() const -> const Expression& { return **mixin_; }
+  auto mixin() -> Expression& { return **mixin_; }
+
+  auto mixin_value() const -> const MixinPseudoType& { return *mixin_value_; }
+  void set_mixin_value(Nonnull<const MixinPseudoType*> mixin_value) {
+    mixin_value_ = mixin_value;
+  }
 
  private:
-  std::optional<Nonnull<Expression*>> mixin_type_;
+  std::optional<Nonnull<Expression*>> mixin_;
+  Nonnull<const MixinPseudoType*> mixin_value_;
 };
 
 class AlternativeSignature : public AstNode {

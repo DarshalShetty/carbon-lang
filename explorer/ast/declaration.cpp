@@ -67,7 +67,7 @@ void Declaration::Print(llvm::raw_ostream& out) const {
     case DeclarationKind::MixDeclaration: {
       const auto& mix_decl = cast<MixDeclaration>(*this);
       PrintID(out);
-      out << mix_decl.mixin_type() << ";";
+      out << mix_decl.mixin() << ";";
       break;
     }
 

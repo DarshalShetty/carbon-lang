@@ -450,8 +450,7 @@ static auto ResolveNames(Declaration& declaration, StaticScope& enclosing_scope)
     }
     case DeclarationKind::MixDeclaration: {
       auto& mix_decl = cast<MixDeclaration>(declaration);
-      CARBON_RETURN_IF_ERROR(
-          ResolveNames(mix_decl.mixin_type(), enclosing_scope));
+      CARBON_RETURN_IF_ERROR(ResolveNames(mix_decl.mixin(), enclosing_scope));
       break;
     }
     case DeclarationKind::ChoiceDeclaration: {

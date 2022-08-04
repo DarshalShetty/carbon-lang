@@ -141,7 +141,7 @@
 %type <Nonnull<Expression*>> statement_expression
 %type <Nonnull<Expression*>> if_expression
 %type <Nonnull<Expression*>> expression
-%type <std::optional<Nonnull<Expression*>>> mixin_import
+%type <Nonnull<Expression*>> mixin_import
 %type <Nonnull<GenericBinding*>> generic_binding
 %type <std::vector<Nonnull<AstNode*>>> deduced_params
 %type <std::vector<Nonnull<AstNode*>>> impl_deduced_params
@@ -926,8 +926,8 @@ declaration:
     }
 | MIXIN identifier type_params mixin_import LEFT_CURLY_BRACE declaration_list RIGHT_CURLY_BRACE
     {
-      auto self = arena -> New<GenericBinding>(context.source_loc(), "Self",
-                                               $4.value());
+      auto self =
+          arena -> New<GenericBinding>(context.source_loc(), "Self", $4);
       $$ = arena->New<MixinDeclaration>(context.source_loc(), $2, $3, self, $6);
     }
 | MIX expression SEMICOLON

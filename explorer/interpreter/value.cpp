@@ -765,9 +765,6 @@ auto FindMember(const std::string& name,
                 llvm::ArrayRef<Nonnull<Declaration*>> members)
     -> std::optional<Nonnull<const Declaration*>> {
   for (Nonnull<const Declaration*> member : members) {
-    if (llvm::isa<MixDeclaration>(member)) {
-      throw std::runtime_error("Continue here!");
-    }
     if (std::optional<std::string> mem_name = GetName(*member);
         mem_name.has_value()) {
       if (*mem_name == name) {
