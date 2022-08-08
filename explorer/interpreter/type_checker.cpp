@@ -1145,7 +1145,7 @@ auto TypeChecker::TypeCheckExp(Nonnull<Expression*> e,
         case Value::Kind::NominalClassType: {
           const auto& t_class = cast<NominalClassType>(object_type);
           if (auto type_member = FindClassMemberAndType(
-                  access.member(), t_class.declaration().members(), t_class);
+                  access.member(), t_class.declaration().members(), &t_class);
               type_member.has_value()) {
             auto [member_type, member] = type_member.value();
             Nonnull<const Value*> field_type =
@@ -1190,7 +1190,7 @@ auto TypeChecker::TypeCheckExp(Nonnull<Expression*> e,
               cast<TypeOfClassType>(object_type).class_type();
           if (auto type_member = FindClassMemberAndType(
                   access.member(), class_type.declaration().members(),
-                  class_type);
+                  &class_type);
               type_member.has_value()) {
             auto [member_type, member] = type_member.value();
             switch (member->kind()) {
@@ -2961,20 +2961,24 @@ void TypeChecker::PrintConstants(llvm::raw_ostream& out) {
 
 auto TypeChecker::FindClassMemberAndType(
     const std::string& name, llvm::ArrayRef<Nonnull<Declaration*>> members,
-    const NominalClassType& class_type)
+    const Nonnull<const Value*> enclosing_type)
     -> std::optional<
         std::pair<Nonnull<const Value*>, Nonnull<const Declaration*>>> {
   for (Nonnull<const Declaration*> member : members) {
     if (llvm::isa<MixDeclaration>(member)) {
       const auto& mix_decl = cast<MixDeclaration>(*member);
       Nonnull<const MixinPseudoType*> mixin = &mix_decl.mixin_value();
-      const auto res = FindClassMemberAndType(
-          name, mixin->declaration().members(), class_type);
+      const auto res =
+          FindClassMemberAndType(name, mixin->declaration().members(), mixin);
       if (res.has_value()) {
-        BindingMap temp_map;
-        temp_map[mixin->declaration().self()] = &class_type;
-        const auto mix_member_type = Substitute(temp_map, res.value().first);
-        return std::make_pair(mix_member_type, res.value().second);
+        if (isa<NominalClassType>(enclosing_type)) {
+          BindingMap temp_map;
+          temp_map[mixin->declaration().self()] = enclosing_type;
+          const auto mix_member_type = Substitute(temp_map, res.value().first);
+          return std::make_pair(mix_member_type, res.value().second);
+        } else {
+          return res;
+        }
       }
 
     } else if (std::optional<std::string> mem_name = GetName(*member);

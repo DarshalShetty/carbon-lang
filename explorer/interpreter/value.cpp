@@ -169,8 +169,11 @@ static auto SetFieldImpl(
       return arena->New<StructValue>(elements);
     }
     case Value::Kind::NominalClassValue: {
-      return SetFieldImpl(arena, &cast<NominalClassValue>(*value).inits(),
-                          path_begin, path_end, field_value, source_loc);
+      const NominalClassValue& object = cast<NominalClassValue>(*value);
+      CARBON_ASSIGN_OR_RETURN(Nonnull<const Value*> inits,
+                              SetFieldImpl(arena, &object.inits(), path_begin,
+                                           path_end, field_value, source_loc));
+      return arena->New<NominalClassValue>(&object.type(), inits);
     }
     case Value::Kind::TupleValue: {
       std::vector<Nonnull<const Value*>> elements =
@@ -747,6 +750,43 @@ auto NominalClassType::FindFunction(const std::string& name) const
     -> std::optional<Nonnull<const FunctionValue*>> {
   for (const auto& member : declaration().members()) {
     switch (member->kind()) {
+      case DeclarationKind::MixDeclaration: {
+        const auto& mix_decl = cast<MixDeclaration>(*member);
+        Nonnull<const MixinPseudoType*> mixin = &mix_decl.mixin_value();
+        const auto res = mixin->FindFunction(name);
+        if (res.has_value()) {
+          return res;
+        }
+        break;
+      }
+      case DeclarationKind::FunctionDeclaration: {
+        const auto& fun = cast<FunctionDeclaration>(*member);
+        if (fun.name() == name) {
+          return &cast<FunctionValue>(**fun.constant_value());
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  return std::nullopt;
+}
+
+// TODO: Find out a way to remove code duplication
+auto MixinPseudoType::FindFunction(const std::string& name) const
+    -> std::optional<Nonnull<const FunctionValue*>> {
+  for (const auto& member : declaration().members()) {
+    switch (member->kind()) {
+      case DeclarationKind::MixDeclaration: {
+        const auto& mix_decl = cast<MixDeclaration>(*member);
+        Nonnull<const MixinPseudoType*> mixin = &mix_decl.mixin_value();
+        const auto res = mixin->FindFunction(name);
+        if (res.has_value()) {
+          return res;
+        }
+        break;
+      }
       case DeclarationKind::FunctionDeclaration: {
         const auto& fun = cast<FunctionDeclaration>(*member);
         if (fun.name() == name) {

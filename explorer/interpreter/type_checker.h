@@ -61,7 +61,7 @@ class TypeChecker {
   // substituting the Self type variable during mix declarations.
   auto FindClassMemberAndType(const std::string& name,
                               llvm::ArrayRef<Nonnull<Declaration*>> members,
-                              const NominalClassType& class_type)
+                              const Nonnull<const Value*> enclosing_type)
       -> std::optional<
           std::pair<Nonnull<const Value*>, Nonnull<const Declaration*>>>;
 
