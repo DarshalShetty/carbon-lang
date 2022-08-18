@@ -19,6 +19,13 @@
 
 namespace Carbon {
 
+using CollectedMembersMap =
+    std::unordered_map<std::string_view, Nonnull<const Declaration*>>;
+
+// Maps a mixin/class declaration to all of its direct and indirect members.
+using GlobalMembersMap =
+    std::unordered_map<Nonnull<const Declaration*>, CollectedMembersMap>;
+
 class TypeChecker {
  public:
   explicit TypeChecker(Nonnull<Arena*> arena,
@@ -63,6 +70,14 @@ class TypeChecker {
                  const ImplScope::Impl& impl, const ImplScope& impl_scope,
                  SourceLocation source_loc) const
       -> std::optional<Nonnull<Expression*>>;
+
+  // Similar to FindMember, but returns the type of mixin methods after
+  // substituting the Self type variable during mix declarations.
+  auto FindMixedMemberAndType(const std::string_view& name,
+                              llvm::ArrayRef<Nonnull<Declaration*>> members,
+                              const Nonnull<const Value*> enclosing_type)
+      -> std::optional<
+          std::pair<Nonnull<const Value*>, Nonnull<const Declaration*>>>;
 
   // Given the witnesses for the components of a constraint, form a witness for
   // the constraint.
@@ -179,6 +194,9 @@ class TypeChecker {
   auto DeclareClassDeclaration(Nonnull<ClassDeclaration*> class_decl,
                                const ScopeInfo& scope_info) -> ErrorOr<Success>;
 
+  auto DeclareMixinDeclaration(Nonnull<MixinDeclaration*> mixin_decl,
+                               const ScopeInfo& scope_info) -> ErrorOr<Success>;
+
   auto DeclareInterfaceDeclaration(Nonnull<InterfaceDeclaration*> iface_decl,
                                    const ScopeInfo& scope_info)
       -> ErrorOr<Success>;
@@ -246,8 +264,10 @@ class TypeChecker {
   // declaration, such as the body of a function.
   // Dispatches to one of the following functions.
   // Assumes that DeclareDeclaration has already been invoked on `d`.
-  auto TypeCheckDeclaration(Nonnull<Declaration*> d,
-                            const ImplScope& impl_scope) -> ErrorOr<Success>;
+  auto TypeCheckDeclaration(
+      Nonnull<Declaration*> d, const ImplScope& impl_scope,
+      std::optional<Nonnull<const Declaration*>> enclosing_decl)
+      -> ErrorOr<Success>;
 
   // Type check the body of the function.
   auto TypeCheckFunctionDeclaration(Nonnull<FunctionDeclaration*> f,
@@ -257,6 +277,16 @@ class TypeChecker {
   // Type check all the members of the class.
   auto TypeCheckClassDeclaration(Nonnull<ClassDeclaration*> class_decl,
                                  const ImplScope& impl_scope)
+      -> ErrorOr<Success>;
+
+  // Type check all the members of the mixin.
+  auto TypeCheckMixinDeclaration(Nonnull<const MixinDeclaration*> mixin_decl,
+                                 const ImplScope& impl_scope)
+      -> ErrorOr<Success>;
+
+  auto TypeCheckMixDeclaration(
+      Nonnull<MixDeclaration*> mix_decl, const ImplScope& impl_scope,
+      std::optional<Nonnull<const Declaration*>> enclosing_decl)
       -> ErrorOr<Success>;
 
   // Type check all the members of the interface.
@@ -404,9 +434,18 @@ class TypeChecker {
 
   void PrintConstants(llvm::raw_ostream& out);
 
+  auto CollectMember(Nonnull<const Declaration*> enclosing_decl,
+                     Nonnull<const Declaration*> member_decl)
+      -> ErrorOr<Success>;
+
+  auto FindCollectedMembers(Nonnull<const Declaration*> decl)
+      -> CollectedMembersMap&;
+
   Nonnull<Arena*> arena_;
   std::set<ValueNodeView> constants_;
   Builtins builtins_;
+
+  GlobalMembersMap collected_members_;
 
   std::optional<Nonnull<llvm::raw_ostream*>> trace_stream_;
 };

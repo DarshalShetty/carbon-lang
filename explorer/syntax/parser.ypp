@@ -108,8 +108,10 @@
 %type <std::optional<Nonnull<Expression*>>> class_declaration_extends
 %type <Nonnull<Declaration*>> declaration
 %type <Nonnull<FunctionDeclaration*>> function_declaration
+%type <Nonnull<MixDeclaration*>> mix_declaration
 %type <Nonnull<AliasDeclaration*>> alias_declaration
 %type <std::vector<Nonnull<Declaration*>>> declaration_list
+%type <std::vector<Nonnull<Declaration*>>> class_mixin_body
 %type <std::vector<Nonnull<Declaration*>>> interface_body
 %type <std::vector<Nonnull<Declaration*>>> impl_body
 %type <Nonnull<Statement*>> statement
@@ -160,6 +162,7 @@
 %type <Nonnull<Expression*>> statement_expression
 %type <Nonnull<Expression*>> if_expression
 %type <Nonnull<Expression*>> expression
+%type <Nonnull<Expression*>> mixin_import
 %type <Nonnull<GenericBinding*>> generic_binding
 %type <Nonnull<Pattern*>> deduced_param
 %type <std::vector<Nonnull<AstNode*>>> deduced_params
@@ -249,6 +252,8 @@
   LIBRARY
   MATCH
   MINUS
+  MIX
+  MIXIN
   NOT
   OR
   PACKAGE
@@ -1059,6 +1064,9 @@ variable_declaration: identifier COLON pattern
 alias_declaration: ALIAS identifier EQUAL expression SEMICOLON
     { $$ = arena->New<AliasDeclaration>(context.source_loc(), $2, $4); }
 ;
+mix_declaration: MIX expression SEMICOLON
+    { $$ = arena->New<MixDeclaration>(context.source_loc(), $2); }
+;
 alternative:
   identifier tuple
     { $$ = arena->New<AlternativeSignature>(context.source_loc(), $1, $2); }
@@ -1092,6 +1100,12 @@ type_params:
 | tuple_pattern
     { $$ = $1; }
 ;
+mixin_import:
+  // Empty
+    { $$ = arena->New<TypeTypeLiteral>(context.source_loc()); }
+| FOR expression
+    { $$ = $2; }
+;
 class_declaration_extensibility:
   // Empty
     { $$ = Carbon::ClassExtensibility::None; }
@@ -1109,11 +1123,17 @@ class_declaration_extends:
 declaration:
   function_declaration
     { $$ = $1; }
-| class_declaration_extensibility CLASS identifier type_params class_declaration_extends LEFT_CURLY_BRACE declaration_list RIGHT_CURLY_BRACE
+| class_declaration_extensibility CLASS identifier type_params class_declaration_extends LEFT_CURLY_BRACE class_mixin_body RIGHT_CURLY_BRACE
     {
       $$ = arena->New<ClassDeclaration>(
           context.source_loc(), $3,
           arena->New<SelfDeclaration>(context.source_loc()), $1, $4, $5, $7);
+    }
+| MIXIN identifier type_params mixin_import LEFT_CURLY_BRACE class_mixin_body RIGHT_CURLY_BRACE
+    {
+      auto self =
+          arena -> New<GenericBinding>(context.source_loc(), "Self", $4);
+      $$ = arena->New<MixinDeclaration>(context.source_loc(), $2, $3, self, $6);
     }
 | CHOICE identifier LEFT_CURLY_BRACE alternative_list RIGHT_CURLY_BRACE
     { $$ = arena->New<ChoiceDeclaration>(context.source_loc(), $2, $4); }
@@ -1172,6 +1192,20 @@ declaration_list:
   // Empty
     { $$ = {}; }
 | declaration_list declaration
+    {
+      $$ = $1;
+      $$.push_back(Nonnull<Declaration*>($2));
+    }
+;
+class_mixin_body:
+  // Empty
+    { $$ = {}; }
+| class_mixin_body declaration
+    {
+      $$ = $1;
+      $$.push_back(Nonnull<Declaration*>($2));
+    }
+| class_mixin_body mix_declaration
     {
       $$ = $1;
       $$.push_back(Nonnull<Declaration*>($2));
